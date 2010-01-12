@@ -62,6 +62,9 @@ public abstract class RESTfulClient {
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.PUT);
         request = request.challenge(challenge);
         request = request.payload(payload);
+        if (handle.isTagged()) {
+            request = request.conditionals(request.getConditionals().addIfMatch(handle.getTag().some()));
+        }
         HTTPResponse response = cache.doCachedRequest(request);
         if (response.getStatus() != Status.OK) {
             throw new RESTException(handle.getURI(), response.getStatus());
