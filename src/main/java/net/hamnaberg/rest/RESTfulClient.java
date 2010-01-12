@@ -40,7 +40,7 @@ public abstract class RESTfulClient {
 
     protected RESTfulClient(HTTPCache cache, String username, String password) {
         Validate.notNull(cache, "Cache may not be null");
-        challenge = new Challenge(username, password.toCharArray(), ChallengeMethod.BASIC);
+        challenge = new UsernamePasswordChallenge(username, password);
         this.cache = cache;
     }
 
@@ -60,11 +60,11 @@ public abstract class RESTfulClient {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.PUT);
-        request.setChallenge(challenge);
-        request.setPayload(payload);
+        request = request.challenge(challenge);
+        request = request.payload(payload);
         HTTPResponse response = cache.doCachedRequest(request);
         if (response.getStatus() != Status.OK) {
-            throw new HttpException(handle.getURI(), response.getStatus());
+            throw new RESTException(handle.getURI(), response.getStatus());
         }
         return unit();
     }
@@ -75,7 +75,7 @@ public abstract class RESTfulClient {
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.DELETE);
         HTTPResponse response = cache.doCachedRequest(request);
         if (!acceptedStatuses.contains(response.getStatus())) {
-            throw new HttpException(handle.getURI(), response.getStatus());
+            throw new RESTException(handle.getURI(), response.getStatus());
         }
     }
 
@@ -83,10 +83,11 @@ public abstract class RESTfulClient {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
-        request.setPayload(payload);
+        request = request.challenge(challenge);
+        request = request.payload(payload);
         HTTPResponse response = cache.doCachedRequest(request);
         if (response.getStatus().isClientError() || response.getStatus().isServerError()) {
-            throw new HttpException(handle.getURI(), response.getStatus());
+            throw new RESTException(handle.getURI(), response.getStatus());
         }
         if (response.hasPayload()) {
             return handle(handle, response);
@@ -98,10 +99,11 @@ public abstract class RESTfulClient {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
-        request.setPayload(payload);
+        request = request.challenge(challenge);
+        request = request.payload(payload);
         HTTPResponse response = cache.doCachedRequest(request);
         if (response.getStatus() != Status.CREATED) {
-            throw new HttpException(handle.getURI(), response.getStatus());
+            throw new RESTException(handle.getURI(), response.getStatus());
         }
         if (!response.hasPayload()) {
             String location = response.getHeaders().getFirstHeaderValue("Location");
@@ -116,10 +118,11 @@ public abstract class RESTfulClient {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
-        request.setPayload(payload);
+        request = request.challenge(challenge);
+        request = request.payload(payload);
         HTTPResponse response = cache.doCachedRequest(request);
         if (response.getStatus() != Status.CREATED) {
-            throw new HttpException(handle.getURI(), response.getStatus());
+            throw new RESTException(handle.getURI(), response.getStatus());
         }
         return new ResourceHandle(URI.create(response.getHeaders().getFirstHeaderValue("Location")), Option.<Tag>none());
     }
@@ -128,11 +131,11 @@ public abstract class RESTfulClient {
         Validate.notNull(handle, "Handle may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.GET);
         if (handle.isTagged()) {
-            request.getConditionals().addIfNoneMatch(handle.getTag().some());
+            request = request.conditionals(request.getConditionals().addIfNoneMatch(handle.getTag().some()));
         }
         if (types != null) {
             for (MIMEType type : types) {
-                request.getPreferences().addMIMEType(type);
+                request = request.preferences(request.getPreferences().addMIMEType(type));
             }
         }
         HTTPResponse response = cache.doCachedRequest(request);
@@ -143,7 +146,7 @@ public abstract class RESTfulClient {
         if (response.getStatus() == Status.OK) {
             return handle(updatedHandle, response);
         }
-        throw new HttpException(handle.getURI(), response.getStatus());
+        throw new RESTException(handle.getURI(), response.getStatus());
     }
 
     protected Option<Resource> handle(ResourceHandle handle, HTTPResponse response) {
