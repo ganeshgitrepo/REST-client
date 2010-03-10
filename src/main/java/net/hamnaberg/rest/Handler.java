@@ -15,6 +15,7 @@
 
 package net.hamnaberg.rest;
 
+import net.hamnaberg.rest.spi.HandlerSpi;
 import org.codehaus.httpcache4j.MIMEType;
 import org.codehaus.httpcache4j.payload.Payload;
 
@@ -22,8 +23,22 @@ import org.codehaus.httpcache4j.payload.Payload;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
 * @version $Revision: #5 $ $Date: 2008/09/15 $
 */
-public interface Handler {
-    boolean supports(MIMEType type);
+public abstract class Handler<T> {
+    private final MIMEType mimeType;
+    private final HandlerSpi<T> handlerSpi;
 
-    Object handle(Payload payload);
+    protected Handler(HandlerSpi<T> handlerSpi, MIMEType mimeType) {
+        this.handlerSpi = handlerSpi;
+        this.mimeType = mimeType;
+    }
+
+    protected HandlerSpi<T> getHandlerSpi() {
+        return handlerSpi;
+    }
+
+    public final boolean supports(MIMEType type) {
+        return mimeType.includes(type);
+    }
+
+    abstract T handle(Payload payload);
 }

@@ -15,19 +15,23 @@
 
 package net.hamnaberg.rest;
 
+import net.hamnaberg.rest.spi.HandlerSpi;
 import org.codehaus.httpcache4j.MIMEType;
 import org.codehaus.httpcache4j.payload.Payload;
+
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
 * @version $Revision: #5 $ $Date: 2008/09/15 $
 */
-public class DefaultHandler implements Handler {
-    public boolean supports(MIMEType type) {
-        return MIMEType.ALL.includes(type);
+public class DefaultHandler extends Handler<InputStream> {
+        
+    public DefaultHandler(final HandlerSpi<InputStream> spi) {
+        super(spi, MIMEType.ALL);
     }
 
-    public Object handle(Payload payload) {
+    public InputStream handle(Payload payload) {
         return payload.getInputStream();
     }
 }

@@ -53,6 +53,10 @@ public class ResourceHandle {
         return tag.isSome();
     }
 
+    public ResourceHandle toUnconditional() {
+        return new ResourceHandle(uri, Option.some(Tag.ALL));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

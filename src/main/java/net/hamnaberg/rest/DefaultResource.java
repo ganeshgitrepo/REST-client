@@ -15,22 +15,23 @@
 
 package net.hamnaberg.rest;
 
+import fj.data.Option;
 import org.apache.commons.lang.Validate;
 import org.codehaus.httpcache4j.Headers;
-import fj.data.Option;
 
 /**
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
-* @version $Revision: #5 $ $Date: 2008/09/15 $
-*/
-public class DefaultResource implements Resource {
+ * @version $Revision: #5 $ $Date: 2008/09/15 $
+ */
+public class DefaultResource<T> implements Resource<T> {
     private final ResourceHandle handle;
     private final Headers headers;
-    private final Object data;
+    private final T data;
 
-    public DefaultResource(ResourceHandle handle, Headers headers, Object data) {
-        this.headers = headers;
+    private DefaultResource(ResourceHandle handle, Headers headers, T data) {
         Validate.notNull(handle, "Resource Handle may not be null");
+        Validate.notNull(headers, "Headers may not be null");
+        this.headers = headers;
         this.handle = handle;
         this.data = data;
     }
@@ -43,10 +44,14 @@ public class DefaultResource implements Resource {
         return headers;
     }
 
-    public <T> Option<T> getData(Class<T> type) {
+    public Option<T> getData() {
         if (data == null) {
             return Option.none();
         }
-        return Option.some(type.cast(data));
+        return Option.some(data);
+    }
+
+    public static <T> DefaultResource<T> create(ResourceHandle handle, Headers headers, T data) {
+        return new DefaultResource<T>(handle, headers, data);
     }
 }

@@ -15,6 +15,7 @@
 
 package net.hamnaberg.rest;
 
+import net.hamnaberg.rest.spi.HandlerSpi;
 import org.codehaus.httpcache4j.MIMEType;
 import org.codehaus.httpcache4j.payload.Payload;
 import org.apache.commons.io.IOUtils;
@@ -29,14 +30,13 @@ import java.io.IOException;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: #5 $ $Date: 2008/09/15 $
  */
-public class URIListHandler implements Handler{
-    private static final MIMEType URI_LIST = MIMEType.valueOf("text/uri-list");
+public class URIListHandler extends Handler<List<URI>> {
 
-    public boolean supports(MIMEType type) {
-        return URI_LIST.includes(type);
+    public URIListHandler(final HandlerSpi<List<URI>> spi) {
+        super(spi, MIMEType.valueOf("text/uri-list"));
     }
 
-    public Object handle(Payload payload) {
+    public List<URI> handle(Payload payload) {
         List<URI> uris = new ArrayList<URI>();
         InputStream stream = payload.getInputStream();
         try {

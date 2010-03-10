@@ -15,6 +15,7 @@
 
 package net.hamnaberg.rest;
 
+import net.hamnaberg.rest.spi.HandlerSpi;
 import org.codehaus.httpcache4j.cache.HTTPCache;
 import org.codehaus.httpcache4j.payload.Payload;
 import org.codehaus.httpcache4j.*;
@@ -42,6 +43,10 @@ public abstract class RESTfulClient {
         Validate.notNull(cache, "Cache may not be null");
         challenge = new UsernamePasswordChallenge(username, password);
         this.cache = cache;
+        ServiceLoader<HandlerSpi> spis = ServiceLoader.load(HandlerSpi.class);
+        for (HandlerSpi spi : spis) {
+            registerHandler(spi.createHandler());
+        }
     }
 
     protected void registerHandler(Handler handler) {
@@ -156,7 +161,7 @@ public abstract class RESTfulClient {
         if (response.hasPayload()) {
             for (Handler handler : getHandlers()) {
                 if (handler.supports(response.getPayload().getMimeType())) {
-                    return Option.<Resource>some(new DefaultResource(handle, response.getHeaders(), handler.handle(response.getPayload())));
+                    return Option.<Resource>some(DefaultResource.create(handle, response.getHeaders(), handler.handle(response.getPayload())));
                 }
             }
         }
