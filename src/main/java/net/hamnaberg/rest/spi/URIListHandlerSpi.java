@@ -6,7 +6,7 @@ import net.hamnaberg.rest.Handler;
 import java.io.InputStream;
 
 /**
- * @author <a href="mailto:erlend@escenic.com">Erlend Hamnaberg</a>
+ * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: $
  */
 public class URIListHandlerSpi extends HandlerSpi<InputStream> {
