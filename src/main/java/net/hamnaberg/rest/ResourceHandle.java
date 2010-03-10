@@ -37,8 +37,8 @@ public class ResourceHandle {
         this.tag = tag;
     }
 
-    public ResourceHandle(final URI pUri) {
-        this(pUri, Option.<Tag>none());
+    public ResourceHandle(final URI uri) {
+        this(uri, Option.<Tag>none());
     }
 
     public URI getURI() {

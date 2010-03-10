@@ -1,21 +1,22 @@
 package net.hamnaberg.rest.spi;
 
-import net.hamnaberg.rest.DefaultHandler;
 import net.hamnaberg.rest.Handler;
+import net.hamnaberg.rest.URIListHandler;
 
-import java.io.InputStream;
+import java.net.URI;
+import java.util.List;
 
 /**
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: $
  */
-public class URIListHandlerSpi extends HandlerSpi<InputStream> {
+public class URIListHandlerSpi extends HandlerSpi<List<URI>> {
     public URIListHandlerSpi() {
         super("HTTPCache4j", "uri-list", "1.0");
     }
 
     @Override
-    public Handler<InputStream> createHandler() {
-        return new DefaultHandler(this);
+    public Handler<List<URI>> createHandler() {
+        return new URIListHandler(this);
     }
 }

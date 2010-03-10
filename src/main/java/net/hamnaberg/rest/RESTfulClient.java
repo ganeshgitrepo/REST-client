@@ -39,14 +39,25 @@ public abstract class RESTfulClient {
     private final Set<Handler> handlers = new HashSet<Handler>();
     private final Challenge challenge;
 
-    protected RESTfulClient(HTTPCache cache, String username, String password) {
+    protected RESTfulClient(HTTPCache cache, Option<String> username, Option<String> password) {
         Validate.notNull(cache, "Cache may not be null");
-        challenge = new UsernamePasswordChallenge(username, password);
+        Validate.notNull(username, "Username option may not be null");
+        Validate.notNull(password, "password option may not be null");
+        if (username.isSome() && password.isSome()) {
+            challenge = new UsernamePasswordChallenge(username.some(), password.some());
+        }
+        else {
+            challenge = null;
+        }
         this.cache = cache;
         ServiceLoader<HandlerSpi> spis = ServiceLoader.load(HandlerSpi.class);
         for (HandlerSpi spi : spis) {
             registerHandler(spi.createHandler());
         }
+    }
+
+    protected RESTfulClient(HTTPCache cache) {
+       this(cache, Option.<String>none(), Option.<String>none());
     }
 
     protected void registerHandler(Handler handler) {
@@ -87,7 +98,7 @@ public abstract class RESTfulClient {
         }
     }
 
-    public Option<Resource> process(ResourceHandle handle, Payload payload) {
+    public <T> Option<Resource<T>> process(ResourceHandle handle, Payload payload) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
@@ -103,7 +114,7 @@ public abstract class RESTfulClient {
         return Option.none();
     }
 
-    public Option<Resource> createAndRead(ResourceHandle handle, Payload payload, List<MIMEType> types) {
+    public <T> Option<Resource<T>> createAndRead(ResourceHandle handle, Payload payload, List<MIMEType> types) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
@@ -135,7 +146,11 @@ public abstract class RESTfulClient {
         return new ResourceHandle(URI.create(response.getHeaders().getFirstHeaderValue("Location")), Option.<Tag>none());
     }
 
-    public Option<Resource> read(ResourceHandle handle, List<MIMEType> types) {
+    public <T> Option<Resource<T>> read(ResourceHandle handle) {
+        return read(handle, Collections.<MIMEType>emptyList());
+    }
+
+    public <T> Option<Resource<T>> read(ResourceHandle handle, List<MIMEType> types) {
         Validate.notNull(handle, "Handle may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.GET);
         if (handle.isTagged()) {
@@ -157,11 +172,12 @@ public abstract class RESTfulClient {
         throw new RESTException(handle.getURI(), response.getStatus());
     }
 
-    protected Option<Resource> handle(ResourceHandle handle, HTTPResponse response) {
+    protected <T> Option<Resource<T>> handle(ResourceHandle handle, HTTPResponse response) {
         if (response.hasPayload()) {
-            for (Handler handler : getHandlers()) {
+            for (Handler<T> handler : getHandlers()) {
                 if (handler.supports(response.getPayload().getMimeType())) {
-                    return Option.<Resource>some(DefaultResource.create(handle, response.getHeaders(), handler.handle(response.getPayload())));
+                    Resource<T> some = DefaultResource.create(handle, response.getHeaders(), handler.handle(response.getPayload()));
+                    return Option.some(some);
                 }
             }
         }
