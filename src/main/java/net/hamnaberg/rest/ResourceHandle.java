@@ -33,6 +33,7 @@ public class ResourceHandle {
 
     ResourceHandle(final URI uri, final Option<Tag> tag) {
         Validate.notNull(uri, "URI may not be null");
+        Validate.notNull(tag, "Tag may not be null");
         this.uri = uri;
         this.tag = tag;
     }
@@ -55,6 +56,10 @@ public class ResourceHandle {
 
     public ResourceHandle toUnconditional() {
         return new ResourceHandle(uri, Option.some(Tag.ALL));
+    }
+
+    public boolean isUnconditional() {
+        return isTagged() && Tag.ALL.equals(tag.some());
     }
 
     @Override
