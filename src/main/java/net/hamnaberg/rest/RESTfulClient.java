@@ -21,6 +21,8 @@ import org.codehaus.httpcache4j.payload.Payload;
 import org.codehaus.httpcache4j.*;
 import org.apache.commons.lang.Validate;
 import fj.data.Option;
+
+import static fj.data.Option.fromNull;
 import static fj.data.Option.none;
 import static fj.data.Option.some;
 import fj.Unit;
@@ -162,7 +164,7 @@ public abstract class RESTfulClient {
             }
         }
         HTTPResponse response = cache.doCachedRequest(request);
-        ResourceHandle updatedHandle = new ResourceHandle(handle.getURI(), some(response.getETag()));
+        ResourceHandle updatedHandle = new ResourceHandle(handle.getURI(), fromNull(response.getETag()));
         if (updatedHandle.equals(handle) && response.getStatus() == Status.NOT_MODIFIED) {
             return Option.none();
         }
