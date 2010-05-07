@@ -24,7 +24,7 @@ import fj.data.Option;
 
 import static fj.data.Option.fromNull;
 import static fj.data.Option.none;
-import static fj.data.Option.some;
+
 import fj.Unit;
 import static fj.Unit.unit;
 
@@ -36,12 +36,12 @@ import java.net.URI;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: #5 $ $Date: 2008/09/15 $
  */
-public abstract class RESTfulClient {
+public abstract class RESTClient {
     private final HTTPCache cache;
     private final Set<Handler> handlers = new HashSet<Handler>();
     private final Challenge challenge;
 
-    protected RESTfulClient(HTTPCache cache, Option<String> username, Option<String> password) {
+    protected RESTClient(HTTPCache cache, Option<String> username, Option<String> password) {
         Validate.notNull(cache, "Cache may not be null");
         Validate.notNull(username, "Username option may not be null");
         Validate.notNull(password, "password option may not be null");
@@ -58,7 +58,7 @@ public abstract class RESTfulClient {
         }
     }
 
-    protected RESTfulClient(HTTPCache cache) {
+    protected RESTClient(HTTPCache cache) {
        this(cache, Option.<String>none(), Option.<String>none());
     }
 
