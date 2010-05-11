@@ -9,13 +9,9 @@ import java.io.InputStream;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: $
  */
-public class DefaultHandlerSpi extends HandlerSpi<InputStream> {
-    public DefaultHandlerSpi() {
-        super("HTTPCache4j", "default", "1.0");
-    }
-
+public class DefaultHandlerSpi extends HandlerSpi {
     @Override
-    public Handler<InputStream> createHandler() {
+    public Handler createHandler() {
         return new DefaultHandler(this);
     }
 }

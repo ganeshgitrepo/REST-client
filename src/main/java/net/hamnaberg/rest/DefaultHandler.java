@@ -25,13 +25,18 @@ import java.io.InputStream;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
 * @version $Revision: #5 $ $Date: 2008/09/15 $
 */
-public class DefaultHandler extends Handler<InputStream> {
+public class DefaultHandler extends Handler {
         
-    public DefaultHandler(final HandlerSpi<InputStream> spi) {
+    public DefaultHandler(final HandlerSpi spi) {
         super(spi, MIMEType.ALL);
     }
 
     public InputStream handle(Payload payload) {
         return payload.getInputStream();
+    }
+
+    @Override
+    public boolean requiresInputStream() {
+        return true;
     }
 }

@@ -10,13 +10,9 @@ import java.util.List;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: $
  */
-public class URIListHandlerSpi extends HandlerSpi<List<URI>> {
-    public URIListHandlerSpi() {
-        super("HTTPCache4j", "uri-list", "1.0");
-    }
-
+public class URIListHandlerSpi extends HandlerSpi {
     @Override
-    public Handler<List<URI>> createHandler() {
+    public Handler createHandler() {
         return new URIListHandler(this);
     }
 }

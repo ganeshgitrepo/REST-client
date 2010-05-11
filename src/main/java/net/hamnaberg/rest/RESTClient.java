@@ -111,7 +111,7 @@ public class RESTClient {
         }
     }
 
-    public <T> Option<Resource<T>> process(ResourceHandle handle, Payload payload) {
+    public <T> Option<Resource> process(ResourceHandle handle, Payload payload) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
@@ -127,7 +127,25 @@ public class RESTClient {
         return Option.none();
     }
 
-    public <T> Option<Resource<T>> createAndRead(ResourceHandle handle, Payload payload, List<MIMEType> types) {
+    public Option<Headers> inspect(ResourceHandle handle) {
+        Validate.notNull(handle, "Handle may not be null");
+        HTTPRequest request = new HTTPRequest(handle.getURI());
+        if (handle.isTagged()) {
+
+        }
+        request = request.challenge(challenge);
+        HTTPResponse response = cache.doCachedRequest(request);
+        if (response.getStatus().isClientError() || response.getStatus().isServerError()) {
+            throw new RESTException(handle.getURI(), response.getStatus());
+        }
+        response.consume();
+        if (response.getStatus() == Status.OK) {
+            return Option.some(response.getHeaders());
+        }
+        return Option.none();
+    }
+
+    public <T> Option<Resource> createAndRead(ResourceHandle handle, Payload payload, List<MIMEType> types) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
@@ -159,11 +177,11 @@ public class RESTClient {
         return new ResourceHandle(URI.create(response.getHeaders().getFirstHeaderValue("Location")), Option.<Tag>none());
     }
 
-    public <T> Option<Resource<T>> read(ResourceHandle handle) {
+    public <T> Option<Resource> read(ResourceHandle handle) {
         return read(handle, Collections.<MIMEType>emptyList());
     }
 
-    public <T> Option<Resource<T>> read(ResourceHandle handle, List<MIMEType> types) {
+    public <T> Option<Resource> read(ResourceHandle handle, List<MIMEType> types) {
         Validate.notNull(handle, "Handle may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.GET);
         if (handle.isTagged()) {
@@ -186,12 +204,11 @@ public class RESTClient {
         throw new RESTException(handle.getURI(), response.getStatus());
     }
 
-    protected <T> Option<Resource<T>> handle(ResourceHandle handle, HTTPResponse response) {
+    protected Option<Resource> handle(ResourceHandle handle, HTTPResponse response) {
         if (response.hasPayload()) {
-            for (Handler<T> handler : getHandlers()) {
+            for (Handler handler : getHandlers()) {
                 if (handler.supports(response.getPayload().getMimeType())) {
-                    Resource<T> some = DefaultResource.create(handle, response.getHeaders(), handler.handle(response.getPayload()));
-                    return Option.some(some);
+                    return Option.<Resource>some(DefaultResource.create(handle, response.getHeaders(), handler.handle(response.getPayload())));
                 }
             }
         }

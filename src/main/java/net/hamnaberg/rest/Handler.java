@@ -23,16 +23,16 @@ import org.codehaus.httpcache4j.payload.Payload;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
 * @version $Revision: #5 $ $Date: 2008/09/15 $
 */
-public abstract class Handler<T> {
+public abstract class Handler {
     private final MIMEType mimeType;
-    private final HandlerSpi<T> handlerSpi;
+    private final HandlerSpi handlerSpi;
 
-    protected Handler(HandlerSpi<T> handlerSpi, MIMEType mimeType) {
+    protected Handler(HandlerSpi handlerSpi, MIMEType mimeType) {
         this.handlerSpi = handlerSpi;
         this.mimeType = mimeType;
     }
 
-    protected final HandlerSpi<T> getHandlerSpi() {
+    protected final HandlerSpi getHandlerSpi() {
         return handlerSpi;
     }
 
@@ -40,5 +40,9 @@ public abstract class Handler<T> {
         return mimeType.includes(type);
     }
 
-    abstract T handle(Payload payload);
+    public boolean requiresInputStream() {
+        return false;
+    }
+
+    abstract Object handle(Payload payload);
 }

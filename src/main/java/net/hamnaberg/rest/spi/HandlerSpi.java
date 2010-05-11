@@ -17,16 +17,6 @@ package net.hamnaberg.rest.spi;
 
 import net.hamnaberg.rest.Handler;
 
-public abstract class HandlerSpi<T> {
-    private final String vendor;
-    private final String name;
-    private final String versions;
-
-    public HandlerSpi(String vendor, String name, String versions) {
-        this.vendor = vendor;
-        this.name = name;
-        this.versions = versions;
-    }
-
-    public abstract Handler<T> createHandler();
+public abstract class HandlerSpi {
+    public abstract Handler createHandler();
 }
