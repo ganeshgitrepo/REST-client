@@ -17,6 +17,7 @@ package net.hamnaberg.rest;
 
 import net.hamnaberg.rest.spi.HandlerSpi;
 import org.codehaus.httpcache4j.cache.HTTPCache;
+import org.codehaus.httpcache4j.cache.MemoryCacheStorage;
 import org.codehaus.httpcache4j.payload.Payload;
 import org.codehaus.httpcache4j.*;
 import org.apache.commons.lang.Validate;
@@ -26,6 +27,8 @@ import static fj.data.Option.fromNull;
 import static fj.data.Option.none;
 
 import fj.Unit;
+import org.codehaus.httpcache4j.resolver.ResponseResolver;
+
 import static fj.Unit.unit;
 
 import java.util.*;
@@ -36,12 +39,12 @@ import java.net.URI;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: #5 $ $Date: 2008/09/15 $
  */
-public abstract class RESTClient {
+public class RESTClient {
     private final HTTPCache cache;
     private final Set<Handler> handlers = new HashSet<Handler>();
     private final Challenge challenge;
 
-    protected RESTClient(HTTPCache cache, Option<String> username, Option<String> password) {
+    public RESTClient(HTTPCache cache, Option<String> username, Option<String> password) {
         Validate.notNull(cache, "Cache may not be null");
         Validate.notNull(username, "Username option may not be null");
         Validate.notNull(password, "password option may not be null");
@@ -58,8 +61,16 @@ public abstract class RESTClient {
         }
     }
 
-    protected RESTClient(HTTPCache cache) {
+    public RESTClient(HTTPCache cache) {
        this(cache, Option.<String>none(), Option.<String>none());
+    }
+
+    public RESTClient(ResponseResolver responseResolver) {
+       this(new HTTPCache(new MemoryCacheStorage(), responseResolver), Option.<String>none(), Option.<String>none());
+    }
+
+    public RESTClient(ResponseResolver responseResolver, String username, String password) {
+       this(new HTTPCache(new MemoryCacheStorage(), responseResolver), fromNull(username), fromNull(password));
     }
 
     protected void registerHandler(Handler handler) {
@@ -93,7 +104,7 @@ public abstract class RESTClient {
     public void remove(ResourceHandle handle) {
         Validate.notNull(handle, "Handle may not be null");
         List<Status> acceptedStatuses = Arrays.asList(Status.OK, Status.NO_CONTENT);
-        HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.DELETE);
+        HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.DELETE).challenge(challenge);        
         HTTPResponse response = cache.doCachedRequest(request);
         if (!acceptedStatuses.contains(response.getStatus())) {
             throw new RESTException(handle.getURI(), response.getStatus());
@@ -163,6 +174,7 @@ public abstract class RESTClient {
                 request = request.preferences(request.getPreferences().addMIMEType(type));
             }
         }
+        request = request.challenge(challenge);
         HTTPResponse response = cache.doCachedRequest(request);
         ResourceHandle updatedHandle = new ResourceHandle(handle.getURI(), fromNull(response.getETag()));
         if (updatedHandle.equals(handle) && response.getStatus() == Status.NOT_MODIFIED) {

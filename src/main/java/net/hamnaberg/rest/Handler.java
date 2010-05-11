@@ -32,7 +32,7 @@ public abstract class Handler<T> {
         this.mimeType = mimeType;
     }
 
-    protected HandlerSpi<T> getHandlerSpi() {
+    protected final HandlerSpi<T> getHandlerSpi() {
         return handlerSpi;
     }
 
