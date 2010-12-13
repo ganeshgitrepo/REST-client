@@ -24,12 +24,12 @@
     <dependency>
       <groupId>org.codehaus.httpcache4j</groupId>
       <artifactId>httpcache4j-core</artifactId>
-      <version>3.1</version>
+      <version>3.2</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.httpcache4j.resolvers</groupId>
       <artifactId>resolvers-httpcomponents-httpclient</artifactId>
-      <version>3.1</version>
+      <version>3.2</version>
     </dependency>
     <dependency>
       <groupId>org.functionaljava</groupId>
