@@ -22,10 +22,10 @@ import org.codehaus.httpcache4j.Headers;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
 * @version $Revision: #5 $ $Date: 2008/09/15 $
 */
-public interface Resource {
+public interface Resource<R> {
     ResourceHandle getResourceHandle();
 
-    Option<Object> getData();
+    Option<R> getData();
 
     Headers getHeaders();
 }

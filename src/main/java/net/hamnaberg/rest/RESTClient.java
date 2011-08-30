@@ -15,6 +15,7 @@
 
 package net.hamnaberg.rest;
 
+import fj.data.Either;
 import net.hamnaberg.rest.spi.HandlerSpi;
 import org.codehaus.httpcache4j.cache.HTTPCache;
 import org.codehaus.httpcache4j.cache.MemoryCacheStorage;
@@ -85,7 +86,7 @@ public class RESTClient {
         return cache;
     }
 
-    public Unit update(ResourceHandle handle, Payload payload) {
+    public Either<Failure, Unit> update(ResourceHandle handle, Payload payload) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.PUT);
@@ -94,94 +95,92 @@ public class RESTClient {
         if (handle.isTagged()) {
             request = request.conditionals(request.getConditionals().addIfMatch(handle.getTag().some()));
         }
-        HTTPResponse response = cache.doCachedRequest(request);
-        if (response.getStatus() != Status.OK) {
-            throw new RESTException(handle.getURI(), response.getStatus());
+        List<Status> acceptedStatuses = Arrays.asList(Status.OK, Status.NO_CONTENT);
+        HTTPResponse response = cache.execute(request);
+        response.consume();
+        if (!acceptedStatuses.contains(response.getStatus())) {
+            return Either.left(new Failure(request.getRequestURI(), response.getStatus(), response.getHeaders()));
         }
-        return unit();
+        return Either.right(unit());
     }
 
-    public void remove(ResourceHandle handle) {
+    public Either<Failure, Unit> remove(ResourceHandle handle) {
         Validate.notNull(handle, "Handle may not be null");
         List<Status> acceptedStatuses = Arrays.asList(Status.OK, Status.NO_CONTENT);
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.DELETE).challenge(challenge);        
-        HTTPResponse response = cache.doCachedRequest(request);
+        HTTPResponse response = cache.execute(request);
+        response.consume();
         if (!acceptedStatuses.contains(response.getStatus())) {
-            throw new RESTException(handle.getURI(), response.getStatus());
+            return Either.left(new Failure(request.getRequestURI(), response.getStatus(), response.getHeaders()));
         }
+        return Either.right(unit());
     }
 
-    public <T> Option<Resource> process(ResourceHandle handle, Payload payload) {
+    public <R> Either<Failure, Option<Resource<R>>> process(ResourceHandle handle, Payload payload) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
         request = request.challenge(challenge);
         request = request.payload(payload);
-        HTTPResponse response = cache.doCachedRequest(request);
+        HTTPResponse response = cache.execute(request);
         if (response.getStatus().isClientError() || response.getStatus().isServerError()) {
-            throw new RESTException(handle.getURI(), response.getStatus());
+            return Either.left(new Failure(request.getRequestURI(), response.getStatus(), response.getHeaders()));
         }
         if (response.hasPayload()) {
-            return handle(handle, response);
+            return Either.right(this.<R>handle(handle, response));
         }
-        return Option.none();
+        return Either.right(Option.<Resource<R>>none());
     }
 
-    public Option<Headers> inspect(ResourceHandle handle) {
+    public Either<Failure, Headers> inspect(ResourceHandle handle) {
         Validate.notNull(handle, "Handle may not be null");
-        HTTPRequest request = new HTTPRequest(handle.getURI());
-        if (handle.isTagged()) {
-
-        }
+        HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.HEAD);
+        
         request = request.challenge(challenge);
-        HTTPResponse response = cache.doCachedRequest(request);
-        if (response.getStatus().isClientError() || response.getStatus().isServerError()) {
-            throw new RESTException(handle.getURI(), response.getStatus());
-        }
+        HTTPResponse response = cache.execute(request);
+
         response.consume();
-        if (response.getStatus() == Status.OK) {
-            return Option.some(response.getHeaders());
+        if (response.getStatus().isClientError() || response.getStatus().isServerError()) {
+            return Either.left(new Failure(request.getRequestURI(), response.getStatus(), response.getHeaders()));
         }
-        return Option.none();
+        return Either.right(response.getHeaders());
     }
 
-    public <T> Option<Resource> createAndRead(ResourceHandle handle, Payload payload, List<MIMEType> types) {
+    public <R> Either<Failure, Option<Resource<R>>> createAndRead(ResourceHandle handle, Payload payload, List<MIMEType> types) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
         request = request.challenge(challenge);
         request = request.payload(payload);
-        HTTPResponse response = cache.doCachedRequest(request);
+        HTTPResponse response = cache.execute(request);
         if (response.getStatus() != Status.CREATED) {
-            throw new RESTException(handle.getURI(), response.getStatus());
+            return Either.left(new Failure(request.getRequestURI(), response.getStatus(), response.getHeaders()));
         }
         if (!response.hasPayload()) {
             String location = response.getHeaders().getFirstHeaderValue("Location");
             return read(new ResourceHandle(URI.create(location)), types);
         }
-        else {
-            return handle(handle, response);
-        }
+        return Either.right(this.<R>handle(handle, response));
     }
 
-    public ResourceHandle create(ResourceHandle handle, Payload payload) {
+    public Either<Failure, ResourceHandle> create(ResourceHandle handle, Payload payload) {
         Validate.notNull(handle, "Handle may not be null");
         Validate.notNull(payload, "Payload may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.POST);
         request = request.challenge(challenge);
         request = request.payload(payload);
-        HTTPResponse response = cache.doCachedRequest(request);
+        HTTPResponse response = cache.execute(request);
         if (response.getStatus() != Status.CREATED) {
-            throw new RESTException(handle.getURI(), response.getStatus());
+            return Either.left(new Failure(request.getRequestURI(), response.getStatus(), response.getHeaders()));
         }
-        return new ResourceHandle(URI.create(response.getHeaders().getFirstHeaderValue("Location")), Option.<Tag>none());
+        return Either.right(new ResourceHandle(URI.create(response.getHeaders().getFirstHeaderValue("Location")), Option.<Tag>none()));
     }
 
-    public <T> Option<Resource> read(ResourceHandle handle) {
+    public <R> Either<Failure, Option<Resource<R>>> read(ResourceHandle handle) {
         return read(handle, Collections.<MIMEType>emptyList());
     }
 
-    public <T> Option<Resource> read(ResourceHandle handle, List<MIMEType> types) {
+    public <R> Either<Failure, Option<Resource<R>>> read(ResourceHandle handle, List<MIMEType> types) {
         Validate.notNull(handle, "Handle may not be null");
         HTTPRequest request = new HTTPRequest(handle.getURI(), HTTPMethod.GET);
         if (handle.isTagged()) {
@@ -193,22 +192,23 @@ public class RESTClient {
             }
         }
         request = request.challenge(challenge);
-        HTTPResponse response = cache.doCachedRequest(request);
+        HTTPResponse response = cache.execute(request);
         ResourceHandle updatedHandle = new ResourceHandle(handle.getURI(), fromNull(response.getETag()));
         if (updatedHandle.equals(handle) && response.getStatus() == Status.NOT_MODIFIED) {
-            return Option.none();
+            return Either.right(Option.<Resource<R>>none());
         }
-        if (response.getStatus() == Status.OK) {
-            return handle(updatedHandle, response);
+        else if (response.getStatus() == Status.OK) {
+            return Either.right(this.<R>handle(updatedHandle, response));
         }
-        throw new RESTException(handle.getURI(), response.getStatus());
+        return Either.right(this.<R>handle(handle, response));
     }
 
-    protected Option<Resource> handle(ResourceHandle handle, HTTPResponse response) {
+    protected <R> Option<Resource<R>> handle(ResourceHandle handle, HTTPResponse response) {
         if (response.hasPayload()) {
             for (Handler handler : getHandlers()) {
                 if (handler.supports(response.getPayload().getMimeType())) {
-                    return Option.<Resource>some(DefaultResource.create(handle, response.getHeaders(), handler.handle(response.getPayload())));
+                    Handler<R> typedHandler = handler; // may cause ClassCastException...
+                    return Option.<Resource<R>>some(DefaultResource.<R>create(handle, response.getHeaders(), typedHandler.handle(response.getPayload())));
                 }
             }
         }

@@ -23,12 +23,12 @@ import org.codehaus.httpcache4j.Headers;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
  * @version $Revision: #5 $ $Date: 2008/09/15 $
  */
-public class DefaultResource implements Resource {
+public class DefaultResource<R> implements Resource<R> {
     private final ResourceHandle handle;
     private final Headers headers;
-    private final Object data;
+    private final R data;
 
-    private DefaultResource(ResourceHandle handle, Headers headers, Object data) {
+    private DefaultResource(ResourceHandle handle, Headers headers, R data) {
         Validate.notNull(handle, "Resource Handle may not be null");
         Validate.notNull(headers, "Headers may not be null");
         this.headers = headers;
@@ -44,14 +44,14 @@ public class DefaultResource implements Resource {
         return headers;
     }
 
-    public Option<Object> getData() {
+    public Option<R> getData() {
         if (data == null) {
             return Option.none();
         }
         return Option.some(data);
     }
 
-    public static DefaultResource create(ResourceHandle handle, Headers headers, Object data) {
-        return new DefaultResource(handle, headers, data);
+    public static <R> DefaultResource<R> create(ResourceHandle handle, Headers headers, R data) {
+        return new DefaultResource<R>(handle, headers, data);
     }
 }

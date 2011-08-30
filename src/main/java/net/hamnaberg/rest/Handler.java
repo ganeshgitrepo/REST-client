@@ -23,7 +23,7 @@ import org.codehaus.httpcache4j.payload.Payload;
  * @author <a href="mailto:erlend@hamnaberg.net">Erlend Hamnaberg</a>
 * @version $Revision: #5 $ $Date: 2008/09/15 $
 */
-public abstract class Handler {
+public abstract class Handler<R> {
     private final MIMEType mimeType;
     private final HandlerSpi handlerSpi;
 
@@ -40,9 +40,5 @@ public abstract class Handler {
         return mimeType.includes(type);
     }
 
-    public boolean requiresInputStream() {
-        return false;
-    }
-
-    abstract Object handle(Payload payload);
+    abstract R handle(Payload payload);
 }
