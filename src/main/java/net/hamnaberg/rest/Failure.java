@@ -50,4 +50,9 @@ public class Failure {
         result = 31 * result + (headers != null ? headers.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Request failed for %s with status %s", uri, status);
+    }
 }

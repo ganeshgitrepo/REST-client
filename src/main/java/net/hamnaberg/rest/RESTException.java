@@ -24,11 +24,14 @@ import java.net.URI;
 * @version $Revision: #5 $ $Date: 2008/09/15 $
 */
 public class RESTException extends RuntimeException {
-    public RESTException(final URI pRequestURI, Status status) {
-        this(pRequestURI, status, "");
+    private final Failure failure;
+
+    public RESTException(Failure failure) {
+        super(failure.toString());
+        this.failure = failure;
     }
 
-    public RESTException(final URI requestURI, Status status, final String message) {
-        super(message + " " + requestURI + " " + status);
+    public Failure getFailure() {
+        return failure;
     }
 }
