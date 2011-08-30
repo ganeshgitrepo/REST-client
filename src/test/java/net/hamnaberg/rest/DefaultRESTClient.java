@@ -1,5 +1,6 @@
 package net.hamnaberg.rest;
 
+import fj.data.Either;
 import fj.data.Option;
 import org.codehaus.httpcache4j.HTTPRequest;
 import org.codehaus.httpcache4j.cache.CacheItem;
@@ -26,10 +27,13 @@ public class DefaultRESTClient extends RESTClient {
         ResourceHandle handle = new ResourceHandle(URI.create("http://www.digi.no/"));
         MemoryCacheStorage storage = new MemoryCacheStorage();
         DefaultRESTClient client = new DefaultRESTClient(new HTTPCache(storage, HTTPClientResponseResolver.createMultithreadedInstance()), null, null);
-        Option<Resource<InputStream>> resourceOption = client.read(handle);
-        if (resourceOption.isSome()) {
-            Resource<InputStream> resource = resourceOption.some();
-            System.out.println(resource.getHeaders());
+        Either<Failure, Option<Resource<InputStream>>> either = client.read(handle);
+        if (either.isRight()) {
+            Option<Resource<InputStream>> resource = either.right().value();
+            if (resource.isSome()) {
+                System.out.println(resource.some().getHeaders());
+            }
+            resource.some().getData().some().close();
             //String value = IOUtils.toString(resource.getData().some());
             //System.out.println(value);
         }
@@ -37,6 +41,6 @@ public class DefaultRESTClient extends RESTClient {
         HTTPRequest req = new HTTPRequest(handle.getURI());
         CacheItem item = storage.get(req);
         System.out.println("item = " + item);
-        System.out.println("item = " + item.isStale(req));
+        System.out.println("item is stale = " + item.isStale(req));
     }
 }
